@@ -1,20 +1,13 @@
 #!/bin/bash
 
-# 🔧 Pfad zur PEM-Datei (3CX)
-PEM_DIR="/var/lib/3cxpbx/Bin/nginx/conf/Instance1"
-
-# 🔍 Finde erste .pem-Datei im Verzeichnis
-PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f -name "*.pem" | head -n 1)
+# 🔧 Datei festlegen
+PEM_FILE="/var/lib/3cxpbx/Bin/nginx/conf/Instance1/domain_cert_dtaxtk.fuldacloud.de.pem"
 BACKUP_FILE="${PEM_FILE}.bak"
 
-if [[ -z "$PEM_FILE" ]]; then
-    echo "Keine .pem-Datei in $PEM_DIR gefunden."
-    exit 1
-fi
+# 🛡 Backup
+cp "$PEM_FILE" "$BACKUP_FILE" && echo "📦 Backup erstellt: $BACKUP_FILE"
 
-echo "🔧 Zertifikatsdatei: $PEM_FILE"
-
-#  Neues Zertifikat inline
+# 📦 Neues Leaf-Zertifikat (genau 1 Block!)
 read -r -d '' NEW_CERT <<'EOF'
 -----BEGIN CERTIFICATE-----
 MIIGNjCCBR6gAwIBAgIQBsAsI9DBqDCSSMpexfQBgDANBgkqhkiG9w0BAQsFADCB
@@ -54,26 +47,35 @@ xNm3oNVzPl+8nw==
 -----END CERTIFICATE-----
 EOF
 
-# 🧠 Backup erstellen
-cp "$PEM_FILE" "${PEM_FILE}.bak"
-echo "📝 Backup erstellt: ${PEM_FILE}.bak"
+# 🔁 Nur den ersten CERT-Block ersetzen, Rest unverändert lassen
+awk -v newcert="$NEW_CERT" '
+BEGIN { inside = 0; replaced = 0 }
+{
+    if (!replaced && /^-----BEGIN CERTIFICATE-----$/) {
+        print newcert
+        inside = 1
+        next
+    }
+    if (inside && /^-----END CERTIFICATE-----$/) {
+        inside = 0
+        replaced = 1
+        next
+    }
+    if (!inside) print
+}
+' "$BACKUP_FILE" > "$PEM_FILE"
 
-# 📌 Neues Zertifikat vorbereiten (für sed escapen)
-ESCAPED_CERT=$(printf "%s\n" "$NEW_CERT" | sed 's/[&/\]/\\&/g' | tr '\n' '\\n')
+# ✅ Ergebnis prüfen
+echo "✅ Zertifikatsblock ersetzt in: $PEM_FILE"
 
-# 🔁 Nur den ersten Zertifikatsblock ersetzen
-sed -i -z "s|-----BEGIN CERTIFICATE-----.*\?-----END CERTIFICATE-----|$ESCAPED_CERT|" "$PEM_FILE"
-
-echo "✅ Zertifikat ersetzt in: $PEM_FILE"
-
-# 🔍 nginx-Konfiguration prüfen
-echo "🔍 Führe nginx -t aus..."
+# 🔍 nginx Konfiguration prüfen
+echo "🔍 nginx -t ausführen..."
 if nginx -t; then
-    echo "✅ nginx-Konfiguration ist gültig. Starte reload..."
+    echo "✅ nginx-Konfiguration OK – führe reload aus..."
     systemctl reload nginx
-    echo "✅ nginx wurde erfolgreich neu geladen."
+    echo "✅ nginx erfolgreich neu geladen."
 else
-    echo "❌ FEHLER in nginx-Konfiguration. Stelle Backup wieder her:"
-    echo "   cp '$BACKUP_FILE' '$PEM_FILE'"
+    echo "❌ nginx-Konfiguration FEHLERHAFT – stelle Backup wieder her:"
+    echo "cp \"$BACKUP_FILE\" \"$PEM_FILE\""
     exit 1
 fi
