@@ -84,7 +84,7 @@ if nginx -t; then
     echo "✅ nginx-Konfiguration OK – führe reload aus..."
     systemctl reload nginx
     echo "✅ nginx erfolgreich neu geladen."
-    cat 
+    cat $PEM_FILE
 else
     echo "❌ nginx-Konfiguration FEHLERHAFT – stelle Backup wieder her:"
     echo "cp \"$BACKUP_FILE\" \"$PEM_FILE\""
