@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PEM_DIR="/var/lib/3cxpbx/Bin/nginx/conf/Instance1"
+
 # 🔍 Finde erste .pem-Datei im Verzeichnis
 PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f -name "*.pem" | head -n 1)
 BACKUP_FILE="${PEM_FILE}.bak"
