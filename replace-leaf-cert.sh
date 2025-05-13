@@ -5,15 +5,16 @@ PEM_DIR="/var/lib/3cxpbx/Bin/nginx/conf/Instance1"
 
 # 🔍 Finde erste .pem-Datei im Verzeichnis
 PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f -name "*.pem" | head -n 1)
+BACKUP_FILE="${PEM_FILE}.bak"
 
 if [[ -z "$PEM_FILE" ]]; then
-    echo "❌ Keine .pem-Datei in $PEM_DIR gefunden."
+    echo "Keine .pem-Datei in $PEM_DIR gefunden."
     exit 1
 fi
 
 echo "🔧 Zertifikatsdatei: $PEM_FILE"
 
-# 📦 Neues Zertifikat inline
+#  Neues Zertifikat inline
 read -r -d '' NEW_CERT <<'EOF'
 -----BEGIN CERTIFICATE-----
 MIIGNjCCBR6gAwIBAgIQBsAsI9DBqDCSSMpexfQBgDANBgkqhkiG9w0BAQsFADCB
@@ -57,31 +58,22 @@ EOF
 cp "$PEM_FILE" "${PEM_FILE}.bak"
 echo "📝 Backup erstellt: ${PEM_FILE}.bak"
 
-# 🔁 Leaf-Zertifikat ersetzen
-awk -v newcert="$NEW_CERT" '
-BEGIN { inside=0 }
-/-----BEGIN CERTIFICATE-----/ && !inside {
-    print newcert
-    inside=1
-    next
-}
-/-----END CERTIFICATE-----/ && inside {
-    inside=0
-    next
-}
-!inside
-' "$PEM_FILE" > "${PEM_FILE}.tmp" && mv "${PEM_FILE}.tmp" "$PEM_FILE"
+# 📌 Neues Zertifikat vorbereiten (für sed escapen)
+ESCAPED_CERT=$(printf "%s\n" "$NEW_CERT" | sed 's/[&/\]/\\&/g' | tr '\n' '\\n')
 
-echo "✅ Zertifikat ersetzt."
+# 🔁 Nur den ersten Zertifikatsblock ersetzen
+sed -i -z "s|-----BEGIN CERTIFICATE-----.*\?-----END CERTIFICATE-----|$ESCAPED_CERT|" "$PEM_FILE"
 
-# 🔍 NGINX-Konfiguration prüfen
-echo "🔍 nginx -t läuft..."
+echo "✅ Zertifikat ersetzt in: $PEM_FILE"
+
+# 🔍 nginx-Konfiguration prüfen
+echo "🔍 Führe nginx -t aus..."
 if nginx -t; then
-    echo "✅ NGINX-Konfiguration OK. Lade neu..."
+    echo "✅ nginx-Konfiguration ist gültig. Starte reload..."
     systemctl reload nginx
-    echo "✅ nginx reload erfolgreich."
+    echo "✅ nginx wurde erfolgreich neu geladen."
 else
-    echo "❌ FEHLER in nginx-Konfiguration! Änderungen wurden NICHT übernommen."
-    echo "➡️  Stelle ggf. das Backup wieder her: cp ${PEM_FILE}.bak ${PEM_FILE}"
+    echo "❌ FEHLER in nginx-Konfiguration. Stelle Backup wieder her:"
+    echo "   cp '$BACKUP_FILE' '$PEM_FILE'"
     exit 1
 fi
