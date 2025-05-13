@@ -3,8 +3,7 @@
 PEM_DIR="/var/lib/3cxpbx/Bin/nginx/conf/Instance1"
 
 # Finde erste .pem-Datei im Verzeichnis
-PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f \( -name "domain_cert_*.pem" -o -name "*-crt.pem" \) | head -n 1)
-
+PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f \( -name "domain_cert_*fuldacloud*.pem" -o -name "*fuldacloud*-crt.pem" \) | head -n 1)
 BACKUP_FILE="${PEM_FILE}.bak"
 
 if [[ -z "$PEM_FILE" ]]; then
