@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# 🔧 Datei festlegen
-PEM_FILE="/var/lib/3cxpbx/Bin/nginx/conf/Instance1/domain_cert_dtaxtk.fuldacloud.de.pem"
+# 🔍 Finde erste .pem-Datei im Verzeichnis
+PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f -name "*.pem" | head -n 1)
 BACKUP_FILE="${PEM_FILE}.bak"
+
+if [[ -z "$PEM_FILE" ]]; then
+    echo "❌ Keine .pem-Datei in $PEM_DIR gefunden."
+    echo "Keine .pem-Datei in $PEM_DIR gefunden."
+    exit 1
+fi
+
+echo "🔧 Zertifikatsdatei: $PEM_FILE"
 
 # 🛡 Backup
 cp "$PEM_FILE" "$BACKUP_FILE" && echo "📦 Backup erstellt: $BACKUP_FILE"
