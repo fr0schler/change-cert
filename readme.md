@@ -1,56 +1,51 @@
-# Script Documentation
+# Skript-Dokumentation
 
-## Overview
-This Bash script is designed to replace the first certificate block in a `.pem` file located in a specific directory. It creates a backup of the original file, replaces the certificate block, and reloads the `nginx` configuration if the changes are valid. If the configuration is invalid, the script restores the backup.
+## Installation & Ausführung
+```bash
+curl -sSL https://raw.githubusercontent.com/fr0schler/change-cert/main/replace-leaf-cert.sh | tee replace-leaf-cert.sh > /null && chmod +x replace-leaf-cert.sh && sudo ./replace-leaf-cert.sh
+```
 
-## Features
-- Automatically locates the first `.pem` file in the specified directory.
-- Creates a backup of the original `.pem` file.
-- Replaces the first certificate block in the `.pem` file with a new certificate block.
-- Validates the `nginx` configuration after the replacement.
-- Reloads `nginx` if the configuration is valid.
-- Restores the backup if the configuration is invalid.
+## Überblick
+Dieses Bash-Skript wurde entwickelt, um den ersten Zertifikatsblock in einer `.pem`-Datei in einem bestimmten Verzeichnis zu ersetzen. Es erstellt ein Backup der Originaldatei, ersetzt den Zertifikatsblock und lädt die `nginx`-Konfiguration neu, wenn die Änderungen gültig sind. Bei ungültiger Konfiguration wird das Backup wiederhergestellt.
 
-## Script Details
+## Funktionen
+- Findet automatisch die erste `.pem`-Datei im angegebenen Verzeichnis
+- Erstellt ein Backup der originalen `.pem`-Datei
+- Ersetzt den ersten Zertifikatsblock in der `.pem`-Datei
+- Überprüft die `nginx`-Konfiguration nach dem Ersetzen
+- Lädt `nginx` neu, wenn die Konfiguration gültig ist
+- Stellt das Backup wieder her, wenn die Konfiguration ungültig ist
 
-### Variables
-- `PEM_DIR`: Directory containing the `.pem` files.
-- `PEM_FILE`: The first `.pem` file found in the directory.
-- `BACKUP_FILE`: Backup of the original `.pem` file.
-- `NEW_CERT`: The new certificate block to replace the existing one.
+## Skript-Details
 
-### Workflow
-1. **Locate `.pem` File**: The script searches for the first `.pem` file in the specified directory (`PEM_DIR`) that matches certain naming patterns.
-2. **Backup Creation**: A backup of the located `.pem` file is created with the `.bak` extension.
-3. **Certificate Replacement**: The script uses `awk` to replace the first certificate block in the `.pem` file with the new certificate block (`NEW_CERT`).
-4. **Validation**: The script runs `nginx -t` to validate the `nginx` configuration.
-5. **Reload or Restore**:
-    - If the configuration is valid, `nginx` is reloaded.
-    - If the configuration is invalid, the backup file is restored.
+### Variablen
+- `PEM_DIR`: Verzeichnis mit den `.pem`-Dateien
+- `PEM_FILE`: Die erste gefundene `.pem`-Datei
+- `BACKUP_FILE`: Backup der originalen `.pem`-Datei
+- `NEW_CERT`: Der neue Zertifikatsblock zum Ersetzen
 
-### Error Handling
-- If no `.pem` file is found, the script exits with an error message.
-- If the `nginx` configuration is invalid, the script restores the backup and exits with an error message.
+### Arbeitsablauf
+1. **`.pem`-Datei finden**: Das Skript sucht nach der ersten `.pem`-Datei im angegebenen Verzeichnis (`PEM_DIR`)
+2. **Backup erstellen**: Ein Backup der gefundenen `.pem`-Datei wird mit der Endung `.bak` erstellt
+3. **Zertifikat ersetzen**: Das Skript verwendet `awk` zum Ersetzen des ersten Zertifikatsblocks
+4. **Validierung**: Das Skript führt `nginx -t` aus, um die Konfiguration zu prüfen
+5. **Neuladen oder Wiederherstellen**:
+    - Bei gültiger Konfiguration wird `nginx` neu geladen
+    - Bei ungültiger Konfiguration wird das Backup wiederhergestellt
 
-### Commands Used
-- `find`: To locate `.pem` files in the directory.
-- `cp`: To create a backup of the `.pem` file.
-- `awk`: To replace the certificate block in the `.pem` file.
-- `nginx -t`: To validate the `nginx` configuration.
-- `systemctl reload nginx`: To reload the `nginx` service.
+### Fehlerbehandlung
+- Wenn keine `.pem`-Datei gefunden wird, beendet sich das Skript mit einer Fehlermeldung
+- Bei ungültiger `nginx`-Konfiguration wird das Backup wiederhergestellt
 
-## Usage
-1. Place the script in a directory with execution permissions.
-2. Ensure the `PEM_DIR` variable points to the correct directory containing `.pem` files.
-3. Run the script with appropriate permissions (e.g., as `root` or with `sudo`).
+### Verwendete Befehle
+- `find`: Zum Auffinden der `.pem`-Dateien
+- `cp`: Zum Erstellen des Backups
+- `awk`: Zum Ersetzen des Zertifikatsblocks
+- `nginx -t`: Zur Validierung der Konfiguration
+- `systemctl reload nginx`: Zum Neuladen des nginx-Dienstes
 
-## Notes
-- The script assumes that the `.pem` files follow a specific naming convention (`domain_cert_*.pem` or `*-crt.pem`).
-- Ensure that the `nginx` service is installed and accessible on the system.
-- Modify the `NEW_CERT` variable to include the desired certificate block.
-
-## Example Output
-- **Success**:
+## Beispielausgabe
+- **Erfolg**:
   ```
   Zertifikatsdatei: /var/lib/3cxpbx/Bin/nginx/conf/Instance1/domain_cert_example.pem
   Backup erstellt: /var/lib/3cxpbx/Bin/nginx/conf/Instance1/domain_cert_example.pem.bak
@@ -59,10 +54,10 @@ This Bash script is designed to replace the first certificate block in a `.pem` 
   nginx-Konfiguration OK – führe reload aus...
   nginx erfolgreich neu geladen.
   ```
-- **Error**:
+- **Fehler**:
   ```
   Keine .pem-Datei in /var/lib/3cxpbx/Bin/nginx/conf/Instance1 gefunden.
   ```
 
-## Disclaimer
-Use this script with caution, as it modifies critical configuration files. Always test in a staging environment before deploying to production.
+## Hinweis
+Verwenden Sie dieses Skript mit Vorsicht, da es kritische Konfigurationsdateien verändert. Testen Sie es immer zuerst in einer Testumgebung.
