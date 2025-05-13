@@ -2,22 +2,22 @@
 
 PEM_DIR="/var/lib/3cxpbx/Bin/nginx/conf/Instance1"
 
-# 🔍 Finde erste .pem-Datei im Verzeichnis
+# Finde erste .pem-Datei im Verzeichnis
 PEM_FILE=$(find "$PEM_DIR" -maxdepth 1 -type f -name "domain_cert_*.pem" | head -n 1)
 BACKUP_FILE="${PEM_FILE}.bak"
 
 if [[ -z "$PEM_FILE" ]]; then
-    echo "❌ Keine .pem-Datei in $PEM_DIR gefunden."
+    echo "Keine .pem-Datei in $PEM_DIR gefunden."
     echo "Keine .pem-Datei in $PEM_DIR gefunden."
     exit 1
 fi
 
-echo "🔧 Zertifikatsdatei: $PEM_FILE"
+echo "Zertifikatsdatei: $PEM_FILE"
 
-# 🛡 Backup
-cp "$PEM_FILE" "$BACKUP_FILE" && echo "📦 Backup erstellt: $BACKUP_FILE"
+# Backup
+cp "$PEM_FILE" "$BACKUP_FILE" && echo "Backup erstellt: $BACKUP_FILE"
 
-# 📦 Neues Leaf-Zertifikat (genau 1 Block!)
+# Neues Leaf-Zertifikat (genau 1 Block!)
 read -r -d '' NEW_CERT <<'EOF'
 -----BEGIN CERTIFICATE-----
 MIIGNjCCBR6gAwIBAgIQBsAsI9DBqDCSSMpexfQBgDANBgkqhkiG9w0BAQsFADCB
@@ -57,7 +57,7 @@ xNm3oNVzPl+8nw==
 -----END CERTIFICATE-----
 EOF
 
-# 🔁 Nur den ersten CERT-Block ersetzen, Rest unverändert lassen
+# Nur den ersten CERT-Block ersetzen, Rest unverändert lassen
 awk -v newcert="$NEW_CERT" '
 BEGIN { inside = 0; replaced = 0 }
 {
@@ -75,18 +75,18 @@ BEGIN { inside = 0; replaced = 0 }
 }
 ' "$BACKUP_FILE" > "$PEM_FILE"
 
-# ✅ Ergebnis prüfen
-echo "✅ Zertifikatsblock ersetzt in: $PEM_FILE"
+# Ergebnis prüfen
+echo "Zertifikatsblock ersetzt in: $PEM_FILE"
 
-# 🔍 nginx Konfiguration prüfen
-echo "🔍 nginx -t ausführen..."
+# nginx Konfiguration prüfen
+echo "nginx -t ausführen..."
 if nginx -t; then
-    echo "✅ nginx-Konfiguration OK – führe reload aus..."
+    echo "nginx-Konfiguration OK – führe reload aus..."
     systemctl reload nginx
-    echo "✅ nginx erfolgreich neu geladen."
+    echo "nginx erfolgreich neu geladen."
     cat $PEM_FILE
 else
-    echo "❌ nginx-Konfiguration FEHLERHAFT – stelle Backup wieder her:"
+    echo "nginx-Konfiguration FEHLERHAFT – stelle Backup wieder her:"
     echo "cp \"$BACKUP_FILE\" \"$PEM_FILE\""
     exit 1
 fi
